@@ -1,0 +1,428 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - main [ref=e2]:
+    - generic [ref=e7]:
+      - link "Logo (Practice Site)" [ref=e8] [cursor=pointer]:
+        - /url: /
+        - img "Logo" [ref=e9]
+        - generic [ref=e10]: (Practice Site)
+      - navigation [ref=e11]:
+        - link "Home" [ref=e12] [cursor=pointer]:
+          - /url: /
+        - link "QA Topics" [ref=e13] [cursor=pointer]:
+          - /url: https://qabrains.com/topics
+        - link "Discussion" [ref=e14] [cursor=pointer]:
+          - /url: https://qabrains.com/discussion
+        - link "Tags" [ref=e15] [cursor=pointer]:
+          - /url: https://qabrains.com/tags
+        - link "Jobs" [ref=e16] [cursor=pointer]:
+          - /url: https://qabrains.com/jobs
+        - link "Practice Site" [ref=e17] [cursor=pointer]:
+          - /url: https://qabrains.com/practice-site
+        - link "About Us" [ref=e18] [cursor=pointer]:
+          - /url: https://qabrains.com/about
+      - link "Sign In" [ref=e20] [cursor=pointer]:
+        - /url: https://qabrains.com/auth/login
+        - text: Sign In
+        - img [ref=e21]
+    - generic [ref=e24]:
+      - complementary [ref=e25]:
+        - generic [ref=e26]:
+          - generic [ref=e27]:
+            - heading "Demo Module" [level=3] [ref=e28]
+            - menu [ref=e29]:
+              - menuitem "User Authentication" [expanded] [ref=e30] [cursor=pointer]:
+                - generic [ref=e31]: User Authentication
+                - img [ref=e33]
+              - menu [ref=e35]:
+                - menuitem "Login" [ref=e36] [cursor=pointer]:
+                  - generic [ref=e37]: Login
+                - menuitem "Registration" [ref=e38] [cursor=pointer]:
+                  - generic [ref=e39]: Registration
+                - menuitem "Forgot Password" [ref=e40] [cursor=pointer]:
+                  - generic [ref=e41]: Forgot Password
+              - menuitem "Form Submission" [ref=e42] [cursor=pointer]:
+                - generic [ref=e43]: Form Submission
+              - menuitem "Drag and Drop List" [ref=e44] [cursor=pointer]:
+                - generic [ref=e45]: Drag and Drop List
+          - generic [ref=e46]:
+            - heading "Demo Site" [level=3] [ref=e47]
+            - menu [ref=e48]:
+              - menuitem "E-Commerce Site" [ref=e49] [cursor=pointer]:
+                - generic [ref=e50]: E-Commerce Site
+              - menuitem "Booking Site" [disabled] [ref=e51]:
+                - generic [ref=e52]: Booking Site
+      - generic [ref=e53]:
+        - generic [ref=e54]:
+          - heading "QA Practice Site" [level=1] [ref=e55]
+          - paragraph [ref=e56]:
+            - text: Learn and practice QA to master software testing, find bugs, and ensure quality. Build skills for reliable,
+            - text: high-performing applications.
+        - generic [ref=e58]:
+          - generic [ref=e60]:
+            - heading "User Authentication" [level=2] [ref=e61]
+            - generic [ref=e62]:
+              - generic [ref=e63]:
+                - generic [ref=e64]: Name*
+                - textbox "Name*" [ref=e66]:
+                  - /placeholder: eg. Jhon Doe
+                  - text: Test User
+              - generic [ref=e67]:
+                - generic [ref=e68]: Select Country*
+                - combobox "Select Country*" [ref=e70]:
+                  - option "Select Country"
+                  - option "Andorra"
+                  - option "United Arab Emirates"
+                  - option "Afghanistan"
+                  - option "Antigua and Barbuda"
+                  - option "Anguilla"
+                  - option "Albania"
+                  - option "Armenia"
+                  - option "Angola"
+                  - option "Antarctica"
+                  - option "Argentina"
+                  - option "American Samoa"
+                  - option "Austria"
+                  - option "Australia"
+                  - option "Aruba"
+                  - option "Aland"
+                  - option "Azerbaijan"
+                  - option "Bosnia and Herzegovina"
+                  - option "Barbados"
+                  - option "Bangladesh"
+                  - option "Belgium"
+                  - option "Burkina Faso"
+                  - option "Bulgaria"
+                  - option "Bahrain"
+                  - option "Burundi"
+                  - option "Benin"
+                  - option "Saint Barthelemy"
+                  - option "Bermuda"
+                  - option "Brunei"
+                  - option "Bolivia"
+                  - option "Bonaire"
+                  - option "Brazil"
+                  - option "Bahamas"
+                  - option "Bhutan"
+                  - option "Bouvet Island"
+                  - option "Botswana"
+                  - option "Belarus"
+                  - option "Belize"
+                  - option "Canada" [selected]
+                  - option "Cocos (Keeling) Islands"
+                  - option "Democratic Republic of the Congo"
+                  - option "Central African Republic"
+                  - option "Republic of the Congo"
+                  - option "Switzerland"
+                  - option "Ivory Coast"
+                  - option "Cook Islands"
+                  - option "Chile"
+                  - option "Cameroon"
+                  - option "China"
+                  - option "Colombia"
+                  - option "Costa Rica"
+                  - option "Cuba"
+                  - option "Cape Verde"
+                  - option "Curacao"
+                  - option "Christmas Island"
+                  - option "Cyprus"
+                  - option "Czech Republic"
+                  - option "Germany"
+                  - option "Djibouti"
+                  - option "Denmark"
+                  - option "Dominica"
+                  - option "Dominican Republic"
+                  - option "Algeria"
+                  - option "Ecuador"
+                  - option "Estonia"
+                  - option "Egypt"
+                  - option "Western Sahara"
+                  - option "Eritrea"
+                  - option "Spain"
+                  - option "Ethiopia"
+                  - option "Finland"
+                  - option "Fiji"
+                  - option "Falkland Islands"
+                  - option "Micronesia"
+                  - option "Faroe Islands"
+                  - option "France"
+                  - option "Gabon"
+                  - option "United Kingdom"
+                  - option "Grenada"
+                  - option "Georgia"
+                  - option "French Guiana"
+                  - option "Guernsey"
+                  - option "Ghana"
+                  - option "Gibraltar"
+                  - option "Greenland"
+                  - option "Gambia"
+                  - option "Guinea"
+                  - option "Guadeloupe"
+                  - option "Equatorial Guinea"
+                  - option "Greece"
+                  - option "South Georgia and the South Sandwich Islands"
+                  - option "Guatemala"
+                  - option "Guam"
+                  - option "Guinea-Bissau"
+                  - option "Guyana"
+                  - option "Hong Kong"
+                  - option "Heard Island and McDonald Islands"
+                  - option "Honduras"
+                  - option "Croatia"
+                  - option "Haiti"
+                  - option "Hungary"
+                  - option "Indonesia"
+                  - option "Ireland"
+                  - option "Israel"
+                  - option "Isle of Man"
+                  - option "India"
+                  - option "British Indian Ocean Territory"
+                  - option "Iraq"
+                  - option "Iran"
+                  - option "Iceland"
+                  - option "Italy"
+                  - option "Jersey"
+                  - option "Jamaica"
+                  - option "Jordan"
+                  - option "Japan"
+                  - option "Kenya"
+                  - option "Kyrgyzstan"
+                  - option "Cambodia"
+                  - option "Kiribati"
+                  - option "Comoros"
+                  - option "Saint Kitts and Nevis"
+                  - option "North Korea"
+                  - option "South Korea"
+                  - option "Kuwait"
+                  - option "Cayman Islands"
+                  - option "Kazakhstan"
+                  - option "Laos"
+                  - option "Lebanon"
+                  - option "Saint Lucia"
+                  - option "Liechtenstein"
+                  - option "Sri Lanka"
+                  - option "Liberia"
+                  - option "Lesotho"
+                  - option "Lithuania"
+                  - option "Luxembourg"
+                  - option "Latvia"
+                  - option "Libya"
+                  - option "Morocco"
+                  - option "Monaco"
+                  - option "Moldova"
+                  - option "Montenegro"
+                  - option "Saint Martin"
+                  - option "Madagascar"
+                  - option "Marshall Islands"
+                  - option "North Macedonia"
+                  - option "Mali"
+                  - option "Myanmar (Burma)"
+                  - option "Mongolia"
+                  - option "Macao"
+                  - option "Northern Mariana Islands"
+                  - option "Martinique"
+                  - option "Mauritania"
+                  - option "Montserrat"
+                  - option "Malta"
+                  - option "Mauritius"
+                  - option "Maldives"
+                  - option "Malawi"
+                  - option "Mexico"
+                  - option "Malaysia"
+                  - option "Mozambique"
+                  - option "Namibia"
+                  - option "New Caledonia"
+                  - option "Niger"
+                  - option "Norfolk Island"
+                  - option "Nigeria"
+                  - option "Nicaragua"
+                  - option "Netherlands"
+                  - option "Norway"
+                  - option "Nepal"
+                  - option "Nauru"
+                  - option "Niue"
+                  - option "New Zealand"
+                  - option "Oman"
+                  - option "Panama"
+                  - option "Peru"
+                  - option "French Polynesia"
+                  - option "Papua New Guinea"
+                  - option "Philippines"
+                  - option "Pakistan"
+                  - option "Poland"
+                  - option "Saint Pierre and Miquelon"
+                  - option "Pitcairn Islands"
+                  - option "Puerto Rico"
+                  - option "Palestine"
+                  - option "Portugal"
+                  - option "Palau"
+                  - option "Paraguay"
+                  - option "Qatar"
+                  - option "Reunion"
+                  - option "Romania"
+                  - option "Serbia"
+                  - option "Russia"
+                  - option "Rwanda"
+                  - option "Saudi Arabia"
+                  - option "Solomon Islands"
+                  - option "Seychelles"
+                  - option "Sudan"
+                  - option "Sweden"
+                  - option "Singapore"
+                  - option "Saint Helena"
+                  - option "Slovenia"
+                  - option "Svalbard and Jan Mayen"
+                  - option "Slovakia"
+                  - option "Sierra Leone"
+                  - option "San Marino"
+                  - option "Senegal"
+                  - option "Somalia"
+                  - option "Suriname"
+                  - option "South Sudan"
+                  - option "Sao Tome and Principe"
+                  - option "El Salvador"
+                  - option "Sint Maarten"
+                  - option "Syria"
+                  - option "Eswatini"
+                  - option "Turks and Caicos Islands"
+                  - option "Chad"
+                  - option "French Southern Territories"
+                  - option "Togo"
+                  - option "Thailand"
+                  - option "Tajikistan"
+                  - option "Tokelau"
+                  - option "East Timor"
+                  - option "Turkmenistan"
+                  - option "Tunisia"
+                  - option "Tonga"
+                  - option "Turkey"
+                  - option "Trinidad and Tobago"
+                  - option "Tuvalu"
+                  - option "Taiwan"
+                  - option "Tanzania"
+                  - option "Ukraine"
+                  - option "Uganda"
+                  - option "U.S. Minor Outlying Islands"
+                  - option "United States"
+                  - option "Uruguay"
+                  - option "Uzbekistan"
+                  - option "Vatican City"
+                  - option "Saint Vincent and the Grenadines"
+                  - option "Venezuela"
+                  - option "British Virgin Islands"
+                  - option "U.S. Virgin Islands"
+                  - option "Vietnam"
+                  - option "Vanuatu"
+                  - option "Wallis and Futuna"
+                  - option "Samoa"
+                  - option "Kosovo"
+                  - option "Yemen"
+                  - option "Mayotte"
+                  - option "South Africa"
+                  - option "Zambia"
+                  - option "Zimbabwe"
+              - generic [ref=e71]:
+                - generic [ref=e72]: Account Type*
+                - combobox "Account Type*" [ref=e74]:
+                  - option "Select Account Type"
+                  - option "Engineer" [selected]
+                  - option "Private Job"
+                  - option "Student"
+                  - option "Government Job"
+              - generic [ref=e75]:
+                - generic [ref=e76]: Email*
+                - textbox "Email*" [active] [ref=e78]:
+                  - /placeholder: eg. user@user.com
+                  - text: qa_testers@qabrains.com
+              - generic [ref=e79]:
+                - generic [ref=e80]: Password*
+                - generic [ref=e81]:
+                  - textbox "Password*" [ref=e82]:
+                    - /placeholder: Enter password
+                  - button [ref=e83] [cursor=pointer]:
+                    - img [ref=e84]
+              - generic [ref=e90]:
+                - generic [ref=e91]: Confirm Password*
+                - generic [ref=e92]:
+                  - textbox "Confirm Password*" [ref=e93]:
+                    - /placeholder: Enter password
+                  - button [ref=e94] [cursor=pointer]:
+                    - img [ref=e95]
+            - button "Signup" [ref=e101] [cursor=pointer]:
+              - text: Signup
+              - img
+          - generic [ref=e103]:
+            - heading "Leave Feedback" [level=2] [ref=e104]
+            - textbox "Write Comment..." [ref=e105]
+            - generic [ref=e106]:
+              - button "Submit" [disabled]
+            - separator [ref=e107]
+            - heading "Feedback (1)" [level=3] [ref=e108]
+            - generic [ref=e113]:
+              - img "user img" [ref=e115]
+              - generic [ref=e116]:
+                - generic [ref=e117]:
+                  - generic [ref=e118]: ธนว.นศท.เกียรติสกุล
+                  - generic [ref=e119]: • 1mo ago
+                - paragraph [ref=e120]: wwdwd
+    - generic [ref=e121]:
+      - generic [ref=e123]:
+        - generic [ref=e124]:
+          - link "logo" [ref=e125] [cursor=pointer]:
+            - /url: https://qabrains.com
+            - img "logo" [ref=e126]
+          - paragraph [ref=e127]: QA Brains is the ultimate QA Community to exchange knowledge, seek advice, and engage in discussions that enhance Quality Assurance testers' skills and expertise.
+        - generic [ref=e128]:
+          - heading "QA Topics" [level=3] [ref=e129]
+          - list [ref=e130]:
+            - listitem [ref=e131]:
+              - link "Web Testing" [ref=e132] [cursor=pointer]:
+                - /url: https://qabrains.com/topics/web-testing
+            - listitem [ref=e133]:
+              - link "Interview Questions" [ref=e134] [cursor=pointer]:
+                - /url: https://qabrains.com/topics/interview-questions
+            - listitem [ref=e135]:
+              - link "Testing Framework" [ref=e136] [cursor=pointer]:
+                - /url: https://qabrains.com/topics/testing-framework
+            - listitem [ref=e137]:
+              - link "See more" [ref=e138] [cursor=pointer]:
+                - /url: https://qabrains.com/topics
+                - text: See more
+                - img [ref=e140]
+        - generic [ref=e142]:
+          - heading "Quick Links" [level=3] [ref=e143]
+          - list [ref=e144]:
+            - listitem [ref=e145]:
+              - link "Discussion" [ref=e146] [cursor=pointer]:
+                - /url: https://qabrains.com/discussion
+            - listitem [ref=e147]:
+              - link "About Us" [ref=e148] [cursor=pointer]:
+                - /url: https://qabrains.com/about
+            - listitem [ref=e149]:
+              - link "Terms & Conditions" [ref=e150] [cursor=pointer]:
+                - /url: https://qabrains.com/terms
+            - listitem [ref=e151]:
+              - link "Privacy Policy" [ref=e152] [cursor=pointer]:
+                - /url: https://qabrains.com/policy
+        - generic [ref=e153]:
+          - heading "Follow Us" [level=3] [ref=e154]
+          - generic [ref=e155]:
+            - link [ref=e156] [cursor=pointer]:
+              - /url: https://www.linkedin.com/showcase/qabrainscom
+              - img [ref=e157]
+            - link [ref=e159] [cursor=pointer]:
+              - /url: https://www.facebook.com/qabrainscom
+              - img [ref=e160]
+            - link [ref=e163] [cursor=pointer]:
+              - /url: https://www.youtube.com/@QABrains
+              - img [ref=e164]
+          - generic [ref=e167]:
+            - heading "For Support" [level=3] [ref=e168]
+            - link "support@qabrains.com" [ref=e169] [cursor=pointer]:
+              - /url: mailto:support@qabrains.com
+      - paragraph [ref=e171]: © 2026 QA Brains | All Rights Reserved
+  - region "Notifications alt+T"
+  - alert [ref=e172]
+```
