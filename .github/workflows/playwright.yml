@@ -1,0 +1,136 @@
+name: Playwright Tests
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    outputs:
+      test-outcome: ${{ steps.run-tests.outcome }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps
+
+      - name: Run Playwright tests
+        id: run-tests
+        continue-on-error: true
+        run: npx playwright test --reporter=html,json
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: test-results.json
+
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Upload JSON test report
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: playwright-report-json
+          path: test-results.json
+          retention-days: 30
+
+      - name: Fail the job if tests failed
+        if: steps.run-tests.outcome == 'failure'
+        run: exit 1
+
+  analyze-failures:
+    runs-on: ubuntu-latest
+    needs: test
+    if: always() && needs.test.outputs.test-outcome == 'failure'
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: playwright-report-json
+
+      - name: Extract failures from report
+        run: |
+          jq '[.. | objects | select(has("ok") and .ok == false and has("tests")) | {
+            test: .title,
+            file: .file,
+            errors: [.tests[].results[] | select(.status != "passed" and .status != "skipped") | {
+              status: .status,
+              message: (.error.message // "No message"),
+              snippet: (.error.snippet // "No snippet")
+            }]
+          }]' test-results.json > failures.json
+
+      - name: Extract history from test-memory
+        run: |
+          jq '[.[-5:][].suites[] | {
+            file: .file,
+            specs: [.specs[] | {
+              test: .title,
+              results: [.tests[].results[] | {
+                status: .status,
+                error: (.error.message // null)
+              }]
+            }]
+          }]' test-memory.json > history.json
+
+      - name: Analyze failures with Claude
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          FAILURES=$(cat failures.json)
+          HISTORY=$(cat history.json)
+          jq -n --arg content "You are analyzing Playwright test failures. For each failing test, use this exact format:
+
+          **Test Name** — one-sentence explanation of why it failed.
+
+          If a test timed out waiting for a specific web element (e.g. a locator like a button, input, or link that could not be found), mention the exact element it was waiting for and that it was not found on the page.
+
+          Then, check the historical test runs below (up to 5 most recent). If this test has failed before, add: \"This test has failed in X of the last Y runs.\" If the same error message has appeared before, add: \"This is a recurring error.\"
+
+          Do not suggest fixes. Do not include headings or titles.
+
+          Current failures:
+          $FAILURES
+
+          Historical runs (most recent 5):
+          $HISTORY" \
+            '{
+              "model": "claude-sonnet-4-20250514",
+              "max_tokens": 1024,
+              "messages": [{"role": "user", "content": $content}]
+            }' > request.json
+
+          RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
+            -H "content-type: application/json" \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -d @request.json)
+          echo "$RESPONSE" | jq -r '.content[0].text' > analysis.txt
+
+      - name: Comment on PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BODY=$(printf '## Test Failure Analysis\n\n%s\n\n---\n*Analyzed by Claude*' "$(cat analysis.txt)")
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --body "$BODY"
