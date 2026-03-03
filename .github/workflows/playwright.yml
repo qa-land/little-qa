@@ -102,6 +102,8 @@ jobs:
 
           **Test Name** — one-sentence explanation of why it failed.
 
+          If a test timed out waiting for a specific web element (e.g. a locator like a button, input, or link that could not be found), mention the exact element it was waiting for and that it was not found on the page.
+
           Then, check the historical test runs below (up to 5 most recent). If this test has failed before, add: \"This test has failed in X of the last Y runs.\" If the same error message has appeared before, add: \"This is a recurring error.\"
 
           Do not suggest fixes. Do not include headings or titles.
