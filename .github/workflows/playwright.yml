@@ -54,7 +54,7 @@ jobs:
   analyze-failures:
     runs-on: ubuntu-latest
     needs: test
-    if: needs.test.outputs.test-outcome == 'failure'
+    if: always() && needs.test.outputs.test-outcome == 'failure'
 
     permissions:
       pull-requests: write
