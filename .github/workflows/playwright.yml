@@ -81,7 +81,11 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           FAILURES=$(cat failures.json)
-          jq -n --arg content "You are analyzing Playwright test failures. Give a concise summary of why each test is failing. Do not suggest any fixes. Keep it brief. Do not include any headings or titles in your response, just the analysis text.
+          jq -n --arg content "You are analyzing Playwright test failures. For each failing test, use this exact format:
+
+          **Test Name** — one-sentence explanation of why it failed.
+
+          Do not suggest fixes. Do not include headings or titles. Just list each failure in the format above.
 
           Test failures:
           $FAILURES" \
