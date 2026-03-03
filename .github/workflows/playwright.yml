@@ -65,9 +65,8 @@ jobs:
           name: playwright-report-json
 
       - name: Extract failures from report
-        id: extract
         run: |
-          FAILURES=$(jq '[.suites[].specs[] | select(.ok == false) | {
+          jq '[.suites[].specs[] | select(.ok == false) | {
             test: .title,
             file: .file,
             errors: [.tests[].results[] | select(.status == "failed") | {
@@ -75,47 +74,35 @@ jobs:
               message: (.error.message // "No message"),
               snippet: (.error.snippet // "No snippet")
             }]
-          }]' test-results.json)
-          echo "failures<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$FAILURES" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
+          }]' test-results.json > failures.json
 
       - name: Analyze failures with Claude
-        id: analyze
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
-          RESPONSE=$(jq -n \
-            --arg failures '${{ steps.extract.outputs.failures }}' \
+          FAILURES=$(cat failures.json)
+          jq -n --arg content "You are analyzing Playwright test failures. Give a concise summary of why each test is failing and suggest a fix. Keep it brief.
+
+          Test failures:
+          $FAILURES" \
             '{
               "model": "claude-sonnet-4-20250514",
               "max_tokens": 1024,
-              "messages": [{
-                "role": "user",
-                "content": ("You are analyzing Playwright test failures. Give a concise summary of why each test is failing and suggest a fix. Keep it brief.\n\nTest failures:\n" + $failures)
-              }]
-            }' | curl -s https://api.anthropic.com/v1/messages \
-              -H "content-type: application/json" \
-              -H "x-api-key: $ANTHROPIC_API_KEY" \
-              -H "anthropic-version: 2023-06-01" \
-              -d @-)
-          ANALYSIS=$(echo "$RESPONSE" | jq -r '.content[0].text')
-          echo "analysis<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$ANALYSIS" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
+              "messages": [{"role": "user", "content": $content}]
+            }' > request.json
+
+          curl -s https://api.anthropic.com/v1/messages \
+            -H "content-type: application/json" \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -d @request.json | jq -r '.content[0].text' > analysis.txt
 
       - name: Comment on PR
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          ANALYSIS=$(cat analysis.txt)
+          BODY=$(printf '## 🔍 Test Failure Analysis\n\n%s\n\n---\n*Analyzed by Claude*' "$ANALYSIS")
           gh pr comment ${{ github.event.pull_request.number }} \
             --repo ${{ github.repository }} \
-            --body "$(cat <<'EOF'
-          ## 🔍 Test Failure Analysis
-
-          ${{ steps.analyze.outputs.analysis }}
-
-          ---
-          *Analyzed by Claude*
-          EOF
-          )"
+            --body "$BODY"
