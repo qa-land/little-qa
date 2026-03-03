@@ -69,7 +69,7 @@ jobs:
           jq '[.. | objects | select(has("ok") and .ok == false and has("tests")) | {
             test: .title,
             file: .file,
-            errors: [.tests[].results[] | select(.status == "failed") | {
+            errors: [.tests[].results[] | select(.status != "passed" and .status != "skipped") | {
               status: .status,
               message: (.error.message // "No message"),
               snippet: (.error.snippet // "No snippet")
@@ -81,7 +81,7 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           FAILURES=$(cat failures.json)
-          jq -n --arg content "You are analyzing Playwright test failures. Give a concise summary of why each test is failing and suggest a fix. Keep it brief. Do not include any headings or titles in your response, just the analysis text.
+          jq -n --arg content "You are analyzing Playwright test failures. Give a concise summary of why each test is failing. Do not suggest any fixes. Keep it brief. Do not include any headings or titles in your response, just the analysis text.
 
           Test failures:
           $FAILURES" \
