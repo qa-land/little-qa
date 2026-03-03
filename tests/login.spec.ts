@@ -7,5 +7,5 @@ test("Login", async ({ page }) => {
   await page.getByLabel("Password").fill("Password123");
   await page.getByRole("button", { name: "Login" }).click();
 
-  await expect(page).toHaveURL(/.*logged=true/);
+  await expect(page).toHaveURL(/.*logged=ue/);
 });
