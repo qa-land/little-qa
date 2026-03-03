@@ -60,6 +60,8 @@ jobs:
       pull-requests: write
 
     steps:
+      - uses: actions/checkout@v4
+
       - uses: actions/download-artifact@v4
         with:
           name: playwright-report-json
@@ -76,19 +78,38 @@ jobs:
             }]
           }]' test-results.json > failures.json
 
+      - name: Extract history from test-memory
+        run: |
+          jq '[.[-5:][].suites[] | {
+            file: .file,
+            specs: [.specs[] | {
+              test: .title,
+              results: [.tests[].results[] | {
+                status: .status,
+                error: (.error.message // null)
+              }]
+            }]
+          }]' test-memory.json > history.json
+
       - name: Analyze failures with Claude
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           FAILURES=$(cat failures.json)
+          HISTORY=$(cat history.json)
           jq -n --arg content "You are analyzing Playwright test failures. For each failing test, use this exact format:
 
           **Test Name** — one-sentence explanation of why it failed.
 
-          Do not suggest fixes. Do not include headings or titles. Just list each failure in the format above.
+          Then, check the historical test runs below (up to 5 most recent). If this test has failed before, add: \"This test has failed in X of the last Y runs.\" If the same error message has appeared before, add: \"This is a recurring error.\"
 
-          Test failures:
-          $FAILURES" \
+          Do not suggest fixes. Do not include headings or titles.
+
+          Current failures:
+          $FAILURES
+
+          Historical runs (most recent 5):
+          $HISTORY" \
             '{
               "model": "claude-sonnet-4-20250514",
               "max_tokens": 1024,
