@@ -7,6 +7,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    outputs:
+      test-outcome: ${{ steps.run-tests.outcome }}
 
     steps:
       - uses: actions/checkout@v4
@@ -23,6 +25,8 @@ jobs:
         run: npx playwright install --with-deps
 
       - name: Run Playwright tests
+        id: run-tests
+        continue-on-error: true
         run: npx playwright test --reporter=html,json
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: test-results.json
@@ -42,3 +46,76 @@ jobs:
           name: playwright-report-json
           path: test-results.json
           retention-days: 30
+
+      - name: Fail the job if tests failed
+        if: steps.run-tests.outcome == 'failure'
+        run: exit 1
+
+  analyze-failures:
+    runs-on: ubuntu-latest
+    needs: test
+    if: needs.test.outputs.test-outcome == 'failure'
+
+    permissions:
+      pull-requests: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: playwright-report-json
+
+      - name: Extract failures from report
+        id: extract
+        run: |
+          FAILURES=$(jq '[.suites[].specs[] | select(.ok == false) | {
+            test: .title,
+            file: .file,
+            errors: [.tests[].results[] | select(.status == "failed") | {
+              status: .status,
+              message: (.error.message // "No message"),
+              snippet: (.error.snippet // "No snippet")
+            }]
+          }]' test-results.json)
+          echo "failures<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$FAILURES" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Analyze failures with Claude
+        id: analyze
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          RESPONSE=$(jq -n \
+            --arg failures '${{ steps.extract.outputs.failures }}' \
+            '{
+              "model": "claude-sonnet-4-20250514",
+              "max_tokens": 1024,
+              "messages": [{
+                "role": "user",
+                "content": ("You are analyzing Playwright test failures. Give a concise summary of why each test is failing and suggest a fix. Keep it brief.\n\nTest failures:\n" + $failures)
+              }]
+            }' | curl -s https://api.anthropic.com/v1/messages \
+              -H "content-type: application/json" \
+              -H "x-api-key: $ANTHROPIC_API_KEY" \
+              -H "anthropic-version: 2023-06-01" \
+              -d @-)
+          ANALYSIS=$(echo "$RESPONSE" | jq -r '.content[0].text')
+          echo "analysis<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$ANALYSIS" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Comment on PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --body "$(cat <<'EOF'
+          ## 🔍 Test Failure Analysis
+
+          ${{ steps.analyze.outputs.analysis }}
+
+          ---
+          *Analyzed by Claude*
+          EOF
+          )"
