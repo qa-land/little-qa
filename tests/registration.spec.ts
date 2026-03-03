@@ -7,7 +7,7 @@ test("Registration", async ({ page }) => {
   await page.getByLabel("Country").selectOption("Canada");
   await page.getByLabel("Account Type").selectOption("Engineer");
   await page.getByLabel("Email").fill("qa_testers@qabrains.com");
-  await page.getByLabel("Password", { exact: true }).fill("Password123");
+  await page.getByLabel("Password").first().fill("Password123");
   await page.getByLabel("Confirm Password").fill("Password123");
-  await page.getByRole("button", { name: "Sign Up" }).click();
+  await page.getByRole("button", { name: "SignUp" }).click();
 });
