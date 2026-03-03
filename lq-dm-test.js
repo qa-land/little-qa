@@ -1,70 +1,65 @@
 const fs = require('fs');
 
-
 const slackBotToken = "xoxb-3582468532-10618794260917-qJknfJzYLbiwTaWPx1rd69G7"; 
-const targetUserId = "U062J9C1VMM";
+const channelId = "C0AJ7JV4H3P"; 
 
-
-function folderNameToTitle(folderName) {
-    return folderName
-        .split('-')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .join(' ');
-}
-
-async function awakenLQ() {
+async function reportToChannel() {
     try {
-        
-        const data = JSON.parse(fs.readFileSync('./test-results/.last-run.json', 'utf8'));
-        
-      
-        const failedTestIds = data.failedTests || [];
-        if (data.status === 'passed' || failedTestIds.length === 0) {
-            console.log("✅ No failures found in .last-run.json. LQ stays asleep.");
-            return;
-        }
+        const data = JSON.parse(fs.readFileSync('./results.json', 'utf8')); 
+        const failures = data.tests.filter(t => t.status !== 'expected');
 
-        const resultsDir = './test-results';
-        const entries = fs.readdirSync(resultsDir, { withFileTypes: true });
-        const failedTestNames = entries
-            .filter(e => e.isDirectory() && e.name !== '.last-run.json')
-            .map(e => folderNameToTitle(e.name));
+        if (failures.length === 0) return;
 
-        let message = `🃏 **LQ has detected the following truths in your last run:**\n\n`;
-        
-        if (failedTestNames.length > 0) {
-            failedTestNames.forEach(name => {
-                message += `🚨 *Failed Test:* ${name}\n\n`;
+        // Build the Block Kit payload
+        const blocks = [
+            {
+                "type": "header",
+                "text": { "type": "plain_text", "text": "🃏 Little LQ: Test Failure Report" }
+            },
+            {
+                "type": "section",
+                "text": { "type": "mrkdwn", "text": `*Status:* 🚨 *${failures.length} Tests Failed*` }
+            },
+            { "type": "divider" }
+        ];
+
+        // Add each failure as a section
+        failures.forEach(fail => {
+            blocks.push({
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": `*Test:* ${fail.name}\n*File:* \`${fail.file}\`\n*Error:* \`Assertion Error\``
+                }
             });
-        } else {
-            failedTestIds.forEach(id => {
-                message += `🚨 *Failed Test ID:* ${id}\n\n`;
-            });
-        }
+        });
 
-      
+        // Add a button at the bottom
+        blocks.push({
+            "type": "actions",
+            "elements": [{
+                "type": "button",
+                "text": { "type": "plain_text", "text": "View Full Report" },
+                "url": "https://playwright-report.qabrains.com/", // Replace with your actual report link for the demo!
+                "style": "danger"
+            }]
+        });
+
         const response = await fetch('https://slack.com/api/chat.postMessage', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${slackBotToken}`
             },
-            body: JSON.stringify({
-                channel: targetUserId,
-                text: message
-            })
+            body: JSON.stringify({ channel: channelId, blocks: blocks })
         });
 
         const result = await response.json();
-        if (result.ok) {
-            console.log("✅ Smart LQ has spoken in your DMs.");
-        } else {
-            console.error("❌ Slack Error:", result.error);
-        }
+        console.log(result.ok ? "✅ Professional report sent!" : `❌ Error: ${result.error}`);
 
     } catch (err) {
-        console.error("❌ Error reading .last-run.json:", err.message);
+        console.error("❌ Error:", err.message);
     }
 }
 
-awakenLQ();
+reportToChannel();
