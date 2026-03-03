@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-test("user can log in with email and password", async ({ page }) => {
+test("Login", async ({ page }) => {
   await page.goto("https://practice.qabrains.com/");
 
   await page.getByLabel("Email").fill("qa_testers@qabrains.com");

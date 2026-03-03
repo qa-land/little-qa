@@ -91,16 +91,18 @@ jobs:
               "messages": [{"role": "user", "content": $content}]
             }' > request.json
 
-          echo "=== Request payload ==="
-          cat request.json
-
-          echo "=== Claude API response ==="
           RESPONSE=$(curl -s https://api.anthropic.com/v1/messages \
             -H "content-type: application/json" \
             -H "x-api-key: $ANTHROPIC_API_KEY" \
             -H "anthropic-version: 2023-06-01" \
             -d @request.json)
-          echo "$RESPONSE"
+          echo "$RESPONSE" | jq -r '.content[0].text' > analysis.txt
 
-          echo "=== Extracted analysis ==="
-          echo "$RESPONSE" | jq -r '.content[0].text'
+      - name: Comment on PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BODY=$(printf '## Test Failure Analysis\n\n%s\n\n---\n*Analyzed by Claude*' "$(cat analysis.txt)")
+          gh pr comment ${{ github.event.pull_request.number }} \
+            --repo ${{ github.repository }} \
+            --body "$BODY"
