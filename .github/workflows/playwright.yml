@@ -32,7 +32,7 @@ jobs:
           PLAYWRIGHT_JSON_OUTPUT_NAME: test-results.json
 
       - name: Send Slack report
-        if: ${{ !cancelled() }}
+        if: steps.run-tests.outcome == 'failure' || steps.run-tests.outcome == 'error'
         env:
           SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
           RESULTS_PATH: ./test-results.json
