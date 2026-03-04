@@ -1,25 +1,3 @@
----
-name: Little QA Roadmap
-overview: A phased roadmap to evolve Little QA from a basic CI-triggered Playwright reporter into a fully integrated, memory-aware QA assistant that analyzes commits, stores test history automatically, and delivers threaded Slack analysis.
-todos:
-  - id: phase-0
-    content: "Phase 0: Fix foundational issues — move hardcoded Slack secrets to env vars, fix results.json/test-results.json file mismatch, wire lq-dm-test.js into the workflow"
-    status: pending
-  - id: phase-1
-    content: "Phase 1: Persistent test memory — store results as GitHub Action artifacts, build composite memory by downloading last N artifacts, remove manual test-memory.json commits"
-    status: pending
-  - id: phase-2
-    content: "Phase 2: Codebase-aware Claude analysis — extract gitDiff from Playwright metadata, include failing test source in prompt, add commit correlation instructions"
-    status: pending
-  - id: phase-3
-    content: "Phase 3: Polished Slack with threaded analysis — enrich Block Kit messages, capture message ts, post Claude analysis as a threaded reply, add historical context in thread"
-    status: pending
-  - id: phase-4
-    content: "Phase 4: Smarter memory and trends — structured test history, flaky test detection, trend tracking across runs, optional success/recovery notifications"
-    status: pending
-isProject: false
----
-
 # Little QA — Project Roadmap
 
 ## Current State
