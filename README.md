@@ -1,4 +1,4 @@
-# Little QA — Project Roadmap
+# Little QA — Project Roadmap 
 
 ## Current State
 
@@ -23,46 +23,41 @@ flowchart LR
 
 ---
 
-## Phase 0: Fix Foundational Issues
+## Phase 0: Fix Foundational Bugs
 
-**Goal:** Patch the three broken things that prevent the existing pieces from working together. Quick wins that unblock everything else.
+**Goal:** Patch the three broken things that prevent new features from working.
 
 ### Changes
 
-- **Move secrets out of code** — replace the hardcoded `slackBotToken` and `channelId` in `[lq-dm-test.js](lq-dm-test.js)` with `process.env.SLACK_BOT_TOKEN` and `process.env.SLACK_CHANNEL_ID`. Add corresponding secrets in the GitHub repo settings.
-- **Fix the file format mismatch** — the workflow outputs `test-results.json` (Playwright JSON reporter format with `suites[].specs[].tests[].results[]`) but `lq-dm-test.js` reads `results.json` expecting `data.tests`. Refactor the script to consume the Playwright format directly.
-- **Wire the script into the workflow** — add a `notify-slack` job to `[playwright.yml](.github/workflows/playwright.yml)` that runs after `analyze-failures`, downloads the `playwright-report-json` artifact, installs Node, and runs `node lq-dm-test.js`.
-
-### Result
-
-The Slack script becomes a functioning part of the CI pipeline instead of a disconnected standalone file.
+- **Move secrets out of code** — replace the hardcoded `slackBotToken` and `channelId` in `lq-dm-test.js` with environment variables (`SLACK_BOT_TOKEN`, `SLACK_CHANNEL_ID`), sourced from GitHub Actions secrets.
+- **Fix the file format mismatch** — the workflow outputs `test-results.json` (Playwright JSON reporter format with `suites[].specs[].tests[].results[]`) but `lq-dm-test.js` reads `results.json` with a `data.tests` shape. Refactor the script to consume the Playwright format directly.
+- **Wire the Slack script into the workflow** — add a `notify-slack` job to `playwright.yml` that runs after `analyze-failures`, downloads the `playwright-report-json` artifact, and executes `node lq-dm-test.js`.
 
 ---
 
-## Phase 1: Persistent Test Memory
+## Phase 1: Persistent Test Memory via Artifacts
 
-**Goal:** Replace the static `test-memory.json` file with automated storage that updates after every CI run.
-
-### Approach: GitHub Action Artifacts
-
-Artifacts are the best fit here — they're durable, inspectable in the GitHub UI, and require no external infrastructure.
+**Goal:** Replace the manually-committed `test-memory.json` with automated artifact storage that updates after every CI run.
 
 ### Changes
 
-- **Store test results as artifacts** — after each E2E run, upload `test-results.json` as a named artifact with a timestamp or run ID (e.g. `test-memory-{run_id}`).
-- **Build a composite test memory** — at the start of the `analyze-failures` job, use the GitHub API (`gh api /repos/{owner}/{repo}/actions/artifacts`) to download the last N artifacts (e.g. 10) and merge them into a single `test-memory.json` using `jq`.
-- **Remove manual `test-memory.json` updates** — the repo no longer needs a committed JSON file. Remove `test-memory.json` from the repo and add it to `.gitignore`. History lives in artifacts.
-- **Fallback** — if no prior artifacts exist (first run), gracefully skip historical analysis by creating an empty `history.json`.
+- **Upload artifacts on every run (pass or fail)** — after each E2E run, upload `test-results.json` as a named artifact with a timestamp or run ID (e.g. `test-results-{run_id}`). Upload on both success and failure so the historical record is complete.
+- **Also upload `playwright-report/` on failure** — ensure the HTML report artifact is always available when tests fail, so the "View Full Report" link in Slack works and developers can debug visually.
+- **Build composite test memory** — at the start of the `analyze-failures` job, use the GitHub API (`gh api /repos/{owner}/{repo}/actions/artifacts`) to download the last N artifacts (e.g. 10), then merge them into a single `history.json` for Claude.
+- **Remove the committed file** — delete `test-memory.json` from the repo and add it to `.gitignore`. History now lives entirely in artifacts.
+- **Fallback** — if no prior artifacts exist (first run), gracefully skip historical analysis instead of failing.
 
 ### Result
 
 ```mermaid
 flowchart TD
   TestJob["test job"] --> RunTests["Run Playwright"]
-  RunTests --> Upload["Upload test-memory-runId artifact"]
-  AnalyzeJob["analyze-failures job"] --> Download["Download last N artifacts via gh api"]
-  Download --> Merge["Merge into test-memory.json"]
-  Merge --> Claude["Pass to Claude"]
+  RunTests --> Results["test-results.json"]
+  Results --> UploadArtifact["Upload artifact\n(pass or fail)"]
+  RunTests -->|failure| UploadReport["Upload playwright-report/"]
+  GHApi["GitHub API\n(list artifacts)"] --> DownloadN["Download last N artifacts"]
+  DownloadN --> MergeHistory["Merge into history.json"]
+  MergeHistory --> AnalyzeJob["analyze-failures job"]
 ```
 
 
@@ -75,15 +70,11 @@ flowchart TD
 
 ### Changes
 
-- **Extract the git diff from Playwright metadata** — the Playwright JSON report already includes `gitDiff` in its `metadata` field. Extract it with `jq '.metadata.gitDiff // empty'` instead of running separate git commands. This is cleaner since the data is already captured at test time.
-- **Include the failing test source** — read the spec file content for each failing test (e.g. `tests/login.spec.ts`) and pass it to Claude so it can identify issues like typos in locators, wrong URLs, or missing assertions.
+- **Extract the git diff from Playwright metadata** — the Playwright JSON report already includes `gitDiff` in its `metadata` field. Extract it with `jq '.metadata.gitDiff'` rather than running separate git commands. This is cleaner and captures exactly what changed between the base and head of the PR.
+- **Include the failing test source** — for each failing spec file (e.g. `tests/login.spec.ts`), read its contents and pass it to Claude so it can identify issues like typos in locators, wrong URLs, or missing assertions.
 - **Include page/component source if available** — if the repo grows to include application code, pass relevant source files to the prompt as well.
-- **Enrich the Claude prompt** — add two new sections:
-  - `Recent changes:` with the extracted `gitDiff`
-  - `Relevant test source:` with the contents of failing spec files
-- **Update the prompt instructions** — tell Claude: "If recent changes modified a locator, selector, or URL that a failing test depends on, mention the specific change and what it affected."
-- **Keep the output concise** — same structured format: **Test Name** — explanation, with an added line noting which commit or change likely caused the failure.
-- **Increase `max_tokens`** to ~2048 to accommodate richer analysis.
+- **Keep the output concise** — prompt Claude to use the same structured format: **Test Name** -- one-sentence explanation, with an added line noting which commit or change likely caused the failure.
+- **Increase `max_tokens`** to ~2048 to accommodate the richer context.
 
 ### Updated Prompt Shape
 
@@ -96,38 +87,44 @@ Current failures:
 Historical runs (most recent 5):
 <history.json>
 
-Recent changes (git diff):
+Git diff from this PR:
 <gitDiff from Playwright metadata>
 
 Relevant test source:
 <contents of failing .spec.ts files>
 
-If recent changes modified a locator, selector, or URL that a failing test
-depends on, mention the specific change and what it affected.
-Do not suggest fixes. Do not include headings or titles.
+If a change in the diff altered a locator, selector, or URL that a failing test depends on,
+mention the specific change and what it affected.
+...
 ```
 
 ---
 
 ## Phase 3: Polished Slack Integration with Threaded Analysis
 
-**Goal:** Evolve the Slack notifications from basic failure alerts into a threaded, conversational experience with Little QA.
+**Goal:** Evolve Slack notifications from basic failure alerts into a threaded, conversational experience with Little QA.
 
-### Primary Message Improvements
+### Primary Message
 
-- **Enrich the Block Kit message** — include the actual error message per failure (not a generic "Assertion Error"), PR title and link, commit author, total passed/failed/skipped counts, and a timestamp.
-- **Clean up message formatting** — use Slack Block Kit sections with mrkdwn for structured, readable messages.
+Post a summary to the configured Slack channel when tests fail, using Block Kit:
+
+- PR title and link
+- Total passed / failed / skipped count
+- List of failed test names with actual error messages (not generic "Assertion Error")
+- "View Full Report" button linking to the Playwright report
 
 ### Threaded Analysis
 
-- **Capture the message `ts`** — after `chat.postMessage` succeeds, extract `result.ts` (the Slack message timestamp used as a thread ID).
-- **Post a threaded reply** — make a second `chat.postMessage` call with `thread_ts` set to the parent message's `ts`. The body is the Claude analysis (the same content posted as a PR comment).
-- **Historical context in thread** — if a test has been failing across multiple runs, include that in the thread reply (e.g. "This test has failed in 4 of the last 5 runs"). This data already exists from the Claude analysis.
-- **Format the thread message** — use Slack mrkdwn: bold test names, inline code for locators, and a footer noting "Analyzed by Claude."
+After posting the primary message:
 
-### Implementation
+- **Capture the message `ts`** — extract `result.ts` from the `chat.postMessage` response (Slack uses this as a thread identifier).
+- **Post Claude's analysis as a thread reply** — make a second `chat.postMessage` with `thread_ts` set to the parent `ts`. The body is the same concise analysis posted to the PR comment: bold test names, one-sentence explanations, no fix suggestions.
+- **Include historical context in the thread** — if a test has been failing across multiple runs, note it (e.g. "This test has failed in 4 of the last 5 runs. This is a recurring error.").
+- **Format with Slack mrkdwn** — bold test names, inline code for locators, and a footer: "Analyzed by Claude."
 
-Refactor `[lq-dm-test.js](lq-dm-test.js)` to support two modes via CLI flags:
+### Refactor `lq-dm-test.js`
+
+Export two functions (`postFailureReport`, `postAnalysisThread`) and support CLI flags so the workflow can call them in sequence:
 
 ```yaml
 - name: Post failure report to Slack
@@ -144,14 +141,18 @@ Refactor `[lq-dm-test.js](lq-dm-test.js)` to support two modes via CLI flags:
   run: node lq-dm-test.js --thread --ts-file slack-ts.txt --analysis analysis.txt
 ```
 
+### Success Notifications
+
+Optionally post a short green message when all tests pass, especially if previous runs had failures (recovery notification).
+
 ### Result
 
 ```mermaid
 flowchart TD
   Analyze["Claude Analysis"] --> PRComment["PR Comment"]
   Analyze --> AnalysisFile["analysis.txt"]
-  Failures["failures.json"] --> SlackReport["Slack: Failure Report"]
-  SlackReport -->|"ts"| SlackThread["Slack: Analysis Thread\n(with historical context)"]
+  Failures["failures.json"] --> SlackReport["Slack: Failure Report\n(PR title, counts, errors)"]
+  SlackReport -->|"ts"| SlackThread["Slack Thread:\nClaude Analysis +\nHistorical Context"]
   AnalysisFile --> SlackThread
 ```
 
@@ -163,13 +164,12 @@ flowchart TD
 
 **Goal:** Move beyond raw result storage to track patterns over time.
 
-### Changes
-
-- **Structured test history** — migrate from raw JSON artifacts to a lightweight structured format (GitHub Pages JSON, a gist, or a simple SQLite in artifacts) that tracks per-test pass/fail over time.
-- **Flaky test detection** — use the historical memory to flag tests that alternate pass/fail and tag them as flaky in both the PR comment and Slack thread.
-- **Trend tracking** — identify tests whose failure rate is increasing, and surface that in the Claude analysis ("This test's failure rate has increased from 20% to 80% over the last 10 runs").
-- **Success/recovery notifications** — post a short green message to Slack when all tests pass, especially if previous runs had failures (recovery notification).
+- **Structured test history** — migrate from raw JSON artifacts to a lightweight store (GitHub Pages JSON, a gist, or a simple SQLite file in artifacts) that tracks per-test pass/fail over time.
+- **Flaky test detection** — use historical data to flag tests that alternate pass/fail. Tag them as flaky in both the PR comment and Slack thread.
+- **Trend reporting** — surface trends like "login.spec.ts has regressed over the last 3 runs" or "all tests have been passing for 10 runs."
 - **Scheduled runs** — add a `schedule` trigger (e.g. nightly cron) to the workflow so tests run against `main` regularly, not just on PRs.
+- **Slash command** — add a Slack slash command (`/littleqa status`) that queries the latest test memory and returns a summary without needing to open GitHub.
+- **Report dashboard** — enhance the GitHub Pages deployment to show a historical pass/fail chart built from test memory data.
 
 ---
 
@@ -179,18 +179,18 @@ flowchart TD
 flowchart TD
   PR["PR Opened"] --> GHA["GitHub Actions"]
   GHA --> Tests["Run Playwright"]
-  Tests --> Upload["Upload artifact\n(test-memory-runId)"]
-  Tests -->|failure| AnalyzeJob["analyze-failures job"]
-  AnalyzeJob --> DownloadHistory["Download last N artifacts"]
-  DownloadHistory --> MergeHistory["Build test-memory.json"]
-  AnalyzeJob --> ExtractDiff["Extract gitDiff + test source"]
-  MergeHistory --> Claude["Claude API"]
-  ExtractDiff --> Claude
+  Tests --> UploadArtifact["Upload test-results.json\n(always)"]
+  Tests -->|failure| UploadReport["Upload playwright-report/\n(on failure)"]
+  UploadArtifact --> ArtifactStore["GitHub Artifacts\n(last N runs)"]
+  ArtifactStore --> AnalyzeJob["analyze-failures job"]
+  Tests -->|failure| AnalyzeJob
+  AnalyzeJob --> ExtractDiff["Extract gitDiff +\ntest source"]
+  ExtractDiff --> Claude["Claude API"]
   Claude --> PRComment["PR Comment"]
-  Claude --> AnalysisFile["analysis.txt"]
+  Claude --> AnalysisTxt["analysis.txt"]
   AnalyzeJob --> SlackReport["Slack: Failure Report"]
-  SlackReport -->|"ts"| SlackThread["Slack: Analysis Thread"]
-  AnalysisFile --> SlackThread
+  SlackReport -->|"thread_ts"| SlackThread["Slack Thread:\nClaude Analysis"]
+  AnalysisTxt --> SlackThread
 ```
 
 
