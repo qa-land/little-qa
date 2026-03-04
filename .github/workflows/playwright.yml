@@ -31,6 +31,13 @@ jobs:
         env:
           PLAYWRIGHT_JSON_OUTPUT_NAME: test-results.json
 
+      - name: Send Slack report
+        if: ${{ !cancelled() }}
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          RESULTS_PATH: ./test-results.json
+        run: node lq-dm-test.js
+
       - name: Upload test report
         uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
@@ -91,6 +98,8 @@ jobs:
               }]
             }]
           }]' test-memory.json > history.json
+
+  
 
       - name: Analyze failures with Claude
         env:
